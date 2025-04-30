@@ -40,7 +40,7 @@ Due to privacy constraints, Party A cannot share Ω directly. Instead, Party A a
 
 ---
 
-## 🔁 Epsilon Values Used
+## Epsilon Values Used
 
 ```python
 EPSILON_VALUES = [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0, 1.2, 1.4, 1.6, 1.8, 2.0]
@@ -76,7 +76,7 @@ private_lsm_tuning/
 
 ---
 
-## ⚙️ How to Run
+## How to Run
 
 1. **Set up virtual environment**:
    ```bash
@@ -98,7 +98,7 @@ private_lsm_tuning/
 
 ---
 
-## 📈 Metrics in Output JSON
+## Metrics in Output JSON
 
 Each record contains:
 
