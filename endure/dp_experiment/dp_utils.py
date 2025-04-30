@@ -1,7 +1,7 @@
 import numpy as np
 from endure.lsm import Workload
 
-def perturb_workload(workload: Workload, epsilon: float, sensitivity: float = 2.0) -> Workload:
+def perturb_workload(workload: Workload, epsilon: float, sensitivity: float = 4.0) -> Workload:
     scale = sensitivity / epsilon
     noisy_values = np.array([workload.z0, workload.z1, workload.q, workload.w]) + \
                    np.random.laplace(0, scale, 4)
