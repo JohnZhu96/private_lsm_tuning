@@ -1,11 +1,11 @@
 
-# 📊 Differentially Private LSM Tree Tuning with Endure
+# Differentially Private LSM Tree Tuning with Endure
 
 This project evaluates how tuning frameworks like **Endure** perform when the input **workload statistics are protected using differential privacy (DP)**. It simulates a scenario where the tuning service only receives **noisy versions** of the actual workload due to privacy concerns.
 
 ---
 
-## 📌 Motivation
+## Motivation
 
 In many real-world systems, organizations may want to optimize their LSM-tree-based database configurations (e.g., compaction strategy, memory allocation) using third-party tuning services like Endure. However, **exposing exact access patterns or workload characteristics may leak sensitive information**.
 
@@ -13,7 +13,7 @@ To preserve privacy, this project applies **differential privacy** to the worklo
 
 ---
 
-## 🧪 Experiment Design
+## Experiment Design
 
 ### Roles
 - **Party A** owns the database and generates a real workload (Ω).
@@ -62,7 +62,7 @@ This experiment quantifies the **privacy-utility trade-off**.
 
 ---
 
-## 📂 Project Structure
+## Project Structure
 
 ```
 private_lsm_tuning/
@@ -125,30 +125,15 @@ Each record contains:
 
 ---
 
-## 📊 Interpretation Guide
+## Interpretation Guide
 
 - Compare `baseline_metrics` vs `dp_metrics` to assess degradation from privacy.
 - Observe how increasing ε improves `dp_metrics` (e.g., lowers total cost).
 - Use `kl_divergence` to understand how much noise was added.
 
----
-
-## 🧪 Example Analysis Snippet (Pandas)
-
-```python
-import pandas as pd
-import json
-
-with open("endure/dp_experiment/results/experiment_summary_YYYYMMDD_HHMMSS.json") as f:
-    data = json.load(f)
-
-df = pd.DataFrame(data)
-df.groupby("epsilon")[["kl_divergence"]].mean()
-```
 
 ---
 
-## 📬 Contact
+## Contact
 
-Created by [Your Name]  
-For research under Prof. Manos Athanassoulis’ group, Boston University.
+Linfeng Zhu (linfengzhu@brandeis.edu)
