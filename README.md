@@ -1,4 +1,3 @@
-
 # Differentially Private LSM Tree Tuning with Endure
 
 This project evaluates how tuning frameworks like **Endure** perform when the input **workload statistics are protected using differential privacy (DP)**. It simulates a scenario where the tuning service only receives **noisy versions** of the actual workload due to privacy concerns.
@@ -24,19 +23,16 @@ Due to privacy constraints, Party A cannot share Ω directly. Instead, Party A a
 
 ### Step-by-Step Workflow
 
-1. **Generate true workload Ω** and system configuration **S** using Endure's `ClassicGen`.
-2. **Apply Laplace noise** to the 4 workload components (`z0`, `z1`, `q`, `w`) using:
-
-   ```
-   Laplace(μ = 0, b = sensitivity / ε), where sensitivity = 1.0
-   ```
-
-3. Use `solver.get_nominal_design(...)`:
-   - On **Ω** to get the baseline configuration Φ.
-   - On **Ω<sub>ε</sub>** to get the private configuration Φ<sub>ε</sub>.
-
-4. Evaluate both configurations on the original workload Ω.
-5. Repeat for multiple ε values and trials to capture variability.
+1. Define six representative **read profiles** (e.g., range-heavy, empty-lookup-heavy).
+2. For each read profile:
+   - Generate a true workload Ω and system configuration S using `ClassicGen`.
+   - Apply **Laplace noise** to Ω to produce Ω<sub>ε</sub>, using:
+     ```
+     Laplace(μ = 0, b = sensitivity / ε)
+     ```
+   - Tune Endure using Ω<sub>ε</sub> to get Φ<sub>ε</sub>; compare with Φ (tuned on Ω).
+3. Evaluate **both configurations on the original workload Ω**.
+4. Repeat the above for **multiple ε values and 100 trials per ε**.
 
 ---
 
@@ -62,6 +58,19 @@ This experiment quantifies the **privacy-utility trade-off**.
 
 ---
 
+## Read Profiles
+
+Workloads were constructed with a fixed write weight of zero to isolate **read pattern behavior**. Example profiles:
+
+| Profile Type           | z0   | z1   | q    | w   |
+|------------------------|------|------|------|-----|
+| Point heavy            | 0.3  | 0.58 | 0.12 | 0.0 |
+| Range heavy            | 0.07 | 0.10 | 0.84 | 0.0 |
+| Empty-read dominant    | 0.86 | 0.09 | 0.04 | 0.0 |
+| Non-empty lookup heavy | 0.08 | 0.86 | 0.06 | 0.0 |
+
+---
+
 ## Project Structure
 
 ```
@@ -70,7 +79,10 @@ private_lsm_tuning/
 │   ├── lsm/                       # Endure's core LSM classes and cost models
 │   └── dp_experiment/
 │       ├── dp_utils.py           # Applies Laplace noise to workloads
-│       ├── experiment_runner.py  # Main experiment pipeline
+│       ├── experiment_runner.py  # DP tuning using uniform workload
+│       ├── experiment_runner2.py # DP tuning across epsilon × rho grid
+│       ├── run_read_profiles.py  # Nominal vs robust design comparison
+│       ├── read_profile_experiment.py  # DP tuning on read profiles
 │       └── results/              # JSON output directory
 ```
 
@@ -85,15 +97,18 @@ private_lsm_tuning/
    pip install numpy scipy numba
    ```
 
-2. **Run experiment**:
+2. **Run the experiment**:
    ```bash
    python endure/dp_experiment/experiment_runner.py
+   # or:
+   python endure/dp_experiment/read_profile_experiment.py
    ```
 
 3. **View output**:
-   Results will be saved to:
    ```
-   endure/dp_experiment/results/experiment_summary_YYYYMMDD_HHMMSS.json
+   endure/dp_experiment/results/read1.json
+   ...
+   read6.json
    ```
 
 ---
@@ -102,35 +117,35 @@ private_lsm_tuning/
 
 Each record contains:
 
-### Global Metadata
-- `epsilon`: The privacy budget used for perturbation.
-- `trial`: The trial number (1-based).
-- `kl_divergence`: Divergence between Ω and Ω<sub>ε</sub>.
+### Metadata
+- `epsilon`: Privacy budget for workload perturbation.
+- `trial`: Trial index.
+- `kl_divergence`: KL divergence between true and DP workload (with smoothing applied to avoid log(0)).
 
-### Workloads & Configurations
-- `true_workload`: Original workload {z0, z1, q, w}.
-- `dp_workload`: Perturbed workload.
-- `baseline_config`: Tuned on true workload.
-- `dp_config`: Tuned on perturbed workload.
+### Workload & Configurations
+- `true_workload`: The clean workload {z0, z1, q, w}.
+- `dp_workload`: The perturbed version with Laplace noise.
+- `baseline_config`: Endure-tuned config based on the true workload.
+- `dp_config`: Config tuned on the DP workload.
 
-### Performance Metrics (under `baseline_metrics` and `dp_metrics`)
+### Performance Metrics (`*_metrics`)
 | Field                  | Description                                      |
 |------------------------|--------------------------------------------------|
-| `total_cost`           | Aggregated cost over all query/write types.     |
-| `empty_point_cost`     | Cost of false-positive point lookups.           |
-| `non_empty_point_cost` | Cost of successful point lookups.               |
-| `range_query_cost`     | Cost from range queries.                        |
-| `write_cost`           | Cost for insertions and compactions.            |
-| `ingestion_throughput` | Approximated as `1 / write_cost`.               |
+| `total_cost`           | Combined cost from all operations.               |
+| `empty_point_cost`     | False positive read cost.                        |
+| `non_empty_point_cost` | Successful read cost.                            |
+| `range_query_cost`     | Cost of range queries.                           |
+| `write_cost`           | Write/compaction overhead.                       |
+| `ingestion_throughput` | Defined as `1 / write_cost` (∞ if `w=0`).        |
 
 ---
 
 ## Interpretation Guide
 
-- Compare `baseline_metrics` vs `dp_metrics` to assess degradation from privacy.
-- Observe how increasing ε improves `dp_metrics` (e.g., lowers total cost).
-- Use `kl_divergence` to understand how much noise was added.
-
+- Compare `baseline_metrics` vs `dp_metrics` to assess performance loss from privacy.
+- Track trends across ε to understand the robustness of tuning.
+- Check `kl_divergence` as a measure of distortion — higher means more noise.
+- Watch for `ingestion_throughput = ∞` when `w=0` — this is expected.
 
 ---
 
