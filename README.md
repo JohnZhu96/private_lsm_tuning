@@ -134,4 +134,3 @@ Each trial records:
 
 Linfeng Zhu (linfengzhu@brandeis.edu)
 
-GitHub Repository: [github.com/linfengzhu/private_lsm_tuning](https://github.com/linfengzhu/private_lsm_tuning)
